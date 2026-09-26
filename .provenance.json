@@ -1,0 +1,77 @@
+{
+  "project_name": "tool-stack-optima",
+  "version": "1.0.0",
+  "last_updated": "2026-09-26 22:20:35",
+  "search_topic": "tool-stack-optima",
+  "radar_query_vectors": [
+    "tool-stack-optima core",
+    "tool-stack-optima benchmark",
+    "tool-stack-optima spec"
+  ],
+  "grounded_sources": [
+    {
+      "name": "SWE-bench / mini-swe-agent",
+      "category": "OPEN_SOURCE",
+      "url": "https://github.com",
+      "stars": null,
+      "core_insight": "[SWE-bench 官网](https://www.swebench.com) [^1]",
+      "adopted_aspects": "工业级代码自动合成与自愈能力基准",
+      "tradeoff": "吸收其测试通过率评估标准，筛选 AI 生成代码确定性最高的语言"
+    },
+    {
+      "name": "Go Performance Book",
+      "category": "OPEN_SOURCE",
+      "url": "https://github.com",
+      "stars": null,
+      "core_insight": "[dgryski/go-perfbook](https://github.com/dgryski/go-perfbook) [^2]",
+      "adopted_aspects": "高并发微服务吞吐与极低内存控制哲学",
+      "tradeoff": "吸纳 Go 在网络中枢与单一静态二进制分发的极高性价比"
+    },
+    {
+      "name": "High Assurance Rust",
+      "category": "OPEN_SOURCE",
+      "url": "https://github.com",
+      "stars": null,
+      "core_insight": "[High Assurance Rust](https://github.com/tnballo/high-assurance-rust) [^3]",
+      "adopted_aspects": "零成本抽象与编译期所有权内存安全防线",
+      "tradeoff": "吸收其系统级无 GC 低延迟内核架构与编译器报错自愈力"
+    },
+    {
+      "name": "UCFS v1.0 终端门面规范",
+      "category": "OPEN_SOURCE",
+      "url": "https://github.com",
+      "stars": null,
+      "core_insight": "[spec-cli-facade 规范](https://github.com/Longgekutta/spec-cli-facade) [^4]",
+      "adopted_aspects": "统一 5 大通用操作动词与零环境变量自愈",
+      "tradeoff": "完整落实 `run.bat` / `run.ps1` / `run.sh` 三合一启动套件"
+    }
+  ],
+  "architectural_invariants": [
+    "Zero-Pip Pure Standard Library",
+    "Sub-15ms Startup & Verification Latency",
+    "Fixed-Point Convergence f(x) = x"
+  ],
+  "alternatives_considered": [
+    {
+      "alternative": "SWE-bench / mini-swe-agent",
+      "reason_rejected_or_adapted": "吸收其测试通过率评估标准，筛选 AI 生成代码确定性最高的语言"
+    },
+    {
+      "alternative": "Go Performance Book",
+      "reason_rejected_or_adapted": "吸纳 Go 在网络中枢与单一静态二进制分发的极高性价比"
+    },
+    {
+      "alternative": "High Assurance Rust",
+      "reason_rejected_or_adapted": "吸收其系统级无 GC 低延迟内核架构与编译器报错自愈力"
+    },
+    {
+      "alternative": "UCFS v1.0 终端门面规范",
+      "reason_rejected_or_adapted": "完整落实 `run.bat` / `run.ps1` / `run.sh` 三合一启动套件"
+    }
+  ],
+  "non_goals": [
+    "坚决杜绝引入重型第三方未审计框架与臃肿依赖",
+    "坚决拒绝只有形式文档而无真实代码的空壳八股",
+    "严禁破坏现有宿主机环境或私自联网泄露凭据"
+  ]
+}

@@ -1,0 +1,12 @@
+cff-version: 1.2.0
+title: "tool-stack-optima"
+message: "If you use or reference this project, please cite it using the metadata below."
+type: software
+authors:
+  - family-names: "Antigravity"
+    given-names: "Fleet"
+version: "1.0.0"
+date-released: "2026-09-26"
+license: "MIT"
+abstract: "tool-stack-optima: First-principles verified component."
+repository-code: "https://github.com/Longgekutta/tool-stack-optima"

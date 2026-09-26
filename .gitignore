@@ -1,0 +1,30 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# C / C++ / Rust / Go build artifacts
+target/
+build/
+*.exe
+*.o
+*.a
+*.so
+*.dylib
+*.dll
+
+# Node.js
+node_modules/
+npm-debug.log*
+
+# Environments & Secrets
+.env
+*.secret
+credentials/
+*.bak*
+
+# IDE & OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
