@@ -1,4 +1,7 @@
 # -*- coding: utf-8 -*-
+import pkgutil
+__path__ = pkgutil.extend_path(__path__, __name__)
+
 from .taxonomy import GOLDEN_COMPILER_STACKS, DISCARDED_STACKS, get_golden_summary_table
 from .intent_parser import FuzzyIntentParser
 from .optimizer import PolyglotArchitectureOptimizer
