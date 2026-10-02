@@ -48,15 +48,24 @@ run.ps1 setup
 run.ps1 run "做一个高并发分布式行情与订单流监控网关，带网页大盘展示"
 # 或: python main.py run "做一个高并发分布式行情与订单流监控网关，带网页大盘展示"
 
-# 3. 查看黄金精选编译器语言库与淘汰台账 (languages)
+# 3. 对目标工程执行自动化架构剖析与技术选型蓝图推演
+run.ps1 profile-repo "D:\github\some-repo"
+
+# 4. 生成非侵入式影子重构手术脚手架与标准 Git 补丁 (scaffold)
+run.ps1 scaffold "D:\github\some-repo"
+
+# 5. 高精度行级 CPU 热点采样分析 (profile)
+run.ps1 profile "D:\github\some-repo"
+
+# 6. 查看黄金精选编译器语言库与淘汰台账 (languages)
 run.ps1 languages
 # 或: python main.py languages
 
-# 4. 运行全量单元测试套件 (test)
+# 7. 运行全量 26 项单元测试套件 (test)
 run.ps1 test
 # 或: python main.py test
 
-# 5. 健康自检诊断 (health)
+# 8. 健康自检诊断 (health)
 run.ps1 health
 # 或: python main.py health
 ```
