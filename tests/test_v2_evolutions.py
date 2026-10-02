@@ -62,8 +62,58 @@ def execute_accelerated_task(payload: bytes) -> bytes:
             self.assertFalse(res["is_native_accelerated"])
 
             markdown = DifferentialTester.render_markdown(res)
-            self.assertIn("双轨差分模糊测试与语义等价性报告", markdown)
+            self.assertIn("通用双轨差分模糊测试与语义等价性报告", markdown)
             self.assertIn("PASS (完全一致)", markdown)
+
+    def test_differential_tester_numeric_and_float_equivalence(self):
+        # 验证数值计算与浮点精度等价性测试能力 (非单纯 bytes)
+        def primary_math(x: float, n: int) -> float:
+            return (x * 1.5) + (n * 2)
+
+        def candidate_optimized_math(x: float, n: int) -> float:
+            # 语义等价实现
+            return 1.5 * x + 2.0 * n
+
+        res = DifferentialTester.test_callable_equivalence(
+            primary_math, candidate_optimized_math, iterations=100
+        )
+        self.assertTrue(res["success"])
+        self.assertEqual(res["counterexamples_count"], 0)
+
+    def test_differential_tester_dict_structured_equivalence(self):
+        # 验证结构化 JSON/Dict 数据的自适应等价性测试
+        def primary_transform(data: dict) -> dict:
+            return {"k_count": len(data), "has_status": "status" in data}
+
+        def candidate_transform(data: dict) -> dict:
+            out = {}
+            out["k_count"] = len(data)
+            out["has_status"] = ("status" in data)
+            return out
+
+        res = DifferentialTester.test_callable_equivalence(
+            primary_transform, candidate_transform, iterations=50
+        )
+        self.assertTrue(res["success"])
+        self.assertEqual(res["counterexamples_count"], 0)
+
+    def test_differential_tester_detects_mismatch_and_counterexample(self):
+        # 验证当候选实现存在微小边界缺陷时，能精准抓出反例
+        def primary_abs(x: int) -> int:
+            return abs(x)
+
+        def buggy_candidate_abs(x: int) -> int:
+            # 存在偶发 bug 的实现: 当 x 为特定值时出错
+            if x == 42:
+                return -42
+            return abs(x)
+
+        res = DifferentialTester.test_callable_equivalence(
+            primary_abs, buggy_candidate_abs, iterations=50
+        )
+        self.assertFalse(res["success"])
+        self.assertGreater(res["counterexamples_count"], 0)
+        self.assertEqual(res["counterexamples"][0]["actual"], "-42")
 
 
 if __name__ == "__main__":
