@@ -1,14 +1,14 @@
 # tool-stack-optima: 全域编译语言选型与多语言架构搭配决策装具
 
 [![Python 3.10+](https://img.shields.io/badge/Python-3.10%2B-brightgreen.svg)](https://python.org)
-[![Zero-Pip: 100% Standard Library](https://img.shields.io/badge/Zero--Pip-100%25%20StdLib-blue.svg)](#)
+[![Architecture: Optimal Polyglot](https://img.shields.io/badge/Architecture-Optimal_Polyglot-blue.svg)](#)
 [![Zero-Env: 100% Self-Contained](https://img.shields.io/badge/Zero--Env-100%25%20Self--Contained-orange.svg)](#)
 [![UCFS: v1.0 Compliant](https://img.shields.io/badge/UCFS-v1.0%20Compliant-brightgreen.svg)](#)
 [![Philosophy: Pareto Optimal Polyglot](https://img.shields.io/badge/Philosophy-Pareto%20Optimal%20Polyglot-purple.svg)](#)
 [![Tests: 100% Passing](https://img.shields.io/badge/Tests-100%25%20Passing-brightgreen.svg)](#)
 
 > **全域编译语言选型与多语言架构搭配决策装具**  
-> Universal CLI Facade (UCFS v1.0) 标准实现 | 100% 离线自洽 | 零第三方依赖 | 帕累托最优架构求解
+> Universal CLI Facade (UCFS v1.0) 标准实现 | 100% 离线自洽 | 多语言架构最优选型 | 帕累托最优架构求解
 
 ---
 
