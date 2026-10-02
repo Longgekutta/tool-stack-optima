@@ -77,11 +77,19 @@ class ProcessTelemetry:
             if peak_ram_mb <= 0:
                 peak_ram_mb = 12.0 if "python" in cmd.lower() else 5.0
 
+            psutil_meta = {}
+            try:
+                import psutil
+                psutil_meta = {"psutil_available": True}
+            except ImportError:
+                psutil_meta = {"psutil_available": False}
+
             return {
                 "success": exit_code == 0,
                 "exit_code": exit_code,
                 "latency_ms": elapsed_ms,
                 "peak_ram_mb": peak_ram_mb,
+                "psutil_enhanced": psutil_meta["psutil_available"],
                 "stdout_snippet": (stdout or "")[:500],
                 "stderr_snippet": (stderr or "")[:500]
             }

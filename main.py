@@ -225,12 +225,26 @@ def cmd_scaffold(args) -> int:
     print(f" 🛠️  原生零拷贝重构手术脚手架已生成: {res['repo_name']}")
     print("=" * 80)
     print(f" • 针对病灶:   {', '.join(res['targeted_bottlenecks']) if res['targeted_bottlenecks'] else '常规性能优化'}")
+    print(f" • 沙盒属性:   🛡️ 隔离影子沙盒 (未侵入覆盖任何现有生产代码)")
     print(f" • 产物根目录: {res['scaffold_root']}")
     print(f" • 生成物料:   {res['generated_files_count']} 个文件")
     for f in res["files"]:
         print(f"    ✓ {f}")
+
+    blast = res.get("blast_radius_evaluation", {})
+    if blast.get("has_blast_data") and blast.get("top_blast_radii"):
+        top_r = blast["top_blast_radii"][0]
+        print("-" * 80)
+        print(" ⚖️  系统爆炸半径与局部最优陷阱研判 (Global vs Local Optimum):")
+        print(f" • 影响范围:   直接/间接波及 {top_r.get('transitive_affected_count', 0)} 个下游模块 (系统占比 {round(top_r.get('blast_ratio', 0)*100, 1)}%)")
+        print(f" • 风险评级:   {top_r.get('risk_assessment', {}).get('level', 'UNKNOWN')}")
+        if top_r.get("risk_assessment", {}).get("is_local_trap"):
+            print(" ⚠️  [局部陷阱预警] 该模块强耦合于整仓架构，单方面使用 Rust 替换可能引发全局契约断裂！")
+            print(" 💡 [AI 宏观思考建议] 优先尝试调用方批量化 (Caller Batching) 或异步流式解耦，无需外门语言即可消除瓶颈。")
+        else:
+            print(" ✓  [安全微内核] 该模块属于孤立/叶子节点，局部微内核加速收益大于系统摩擦。")
     print("-" * 80)
-    print(" 🚀 下一步操作：运行 build_native 脚本编译高性能动态库，并在 Python 中引入 bridge_glue。")
+    print(" 🚀 下一步操作：详细分析见 scaffold_refactor/README_SCAFFOLD.md，必要时启动 build_native.ps1 编译。")
     print("=" * 80)
     return 0
 
