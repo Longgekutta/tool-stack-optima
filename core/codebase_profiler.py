@@ -237,37 +237,84 @@ class CodebaseProfiler:
 
     @classmethod
     def _diagnose_bottlenecks(cls, dominant_lang: str, signals: Dict[str, List[str]], lang_stats: Dict[str, Dict[str, int]]) -> List[Dict[str, str]]:
-        """基于语言固有物理约束与代码实际行为，指出不可调和的工程瓶颈"""
+        """基于语言固有物理约束与代码实际行为，指出不可调和的工程瓶颈 (支持多语言多架构泛化推导)"""
         issues = []
+        d_lang = dominant_lang.capitalize()
 
-        # 1. 纯 Python 承载高频子进程调用瓶颈
-        if dominant_lang == "Python" and len(signals["subprocess_calls"]) > 2:
+        # 1. 高频子进程调用瓶颈 (Subprocess Latency Bottleneck)
+        if len(signals["subprocess_calls"]) > 2:
+            if d_lang == "Python":
+                issues.append({
+                    "severity": "HIGH",
+                    "category": "SUBPROCESS_LATENCY_BOTTLENECK",
+                    "evidence": f"代码中发现 {len(signals['subprocess_calls'])} 处子进程外部调用 (如 {signals['subprocess_calls'][0]})",
+                    "impact": "Python 频繁通过 subprocess 启停外部二进制存在 50ms~200ms 的固定开销与进程创建风暴",
+                    "recommendation": "将该外部交互下沉为原生直连 (如 C-ABI/PyO3 动态链接库直接嵌入、长连接守护进程或共享内存 IPC)"
+                })
+            elif d_lang in ("Typescript", "Javascript"):
+                issues.append({
+                    "severity": "HIGH",
+                    "category": "EVENT_LOOP_SUBPROCESS_STALL",
+                    "evidence": f"Node/TS 代码中发现 {len(signals['subprocess_calls'])} 处子进程调用",
+                    "impact": "Node.js 频繁衍生 child_process 或使用 execSync 将导致 V8 单线程事件循环发生物理停顿",
+                    "recommendation": "改写为基于 Worker Threads 异步池或通过 N-API 原生插件嵌入"
+                })
+            else:
+                issues.append({
+                    "severity": "MEDIUM",
+                    "category": "UNNECESSARY_SUBPROCESS_SPAWN",
+                    "evidence": f"系统编程语言中频繁调用外部命令 ({len(signals['subprocess_calls'])}处)",
+                    "impact": "在系统语言中频繁 spawn 外部命令违背了单二进制自包含原则，产生额外上下文切换损耗",
+                    "recommendation": "采用对应语言的原生库生态直接集成，消除对宿主环境外部 CLI 的隐式依赖"
+                })
+
+        # 2. 高并发网络/WebSocket 与并发模型阻塞
+        if len(signals["high_freq_io"]) > 0 and len(signals["concurrency_models"]) > 0:
+            if d_lang == "Python":
+                issues.append({
+                    "severity": "HIGH",
+                    "category": "GIL_CONCURRENCY_LIMITATION",
+                    "evidence": f"在 Python 代码中检测到高频流式通信/WebSocket ({len(signals['high_freq_io'])}处) 并发调度",
+                    "impact": "由于 Python GIL (全局解释器锁) 存在，大量密集序列化与网络多路复用会导致单核打满、P99 抖动剧烈",
+                    "recommendation": "将中枢网络网关/反向代理/WebSocket 复用层剥离为 Go/Rust 独立中枢 (单静态二进制，亚毫秒级无锁事件分发)"
+                })
+            elif d_lang in ("Typescript", "Javascript"):
+                issues.append({
+                    "severity": "MEDIUM",
+                    "category": "EVENT_LOOP_CPU_SATURATION",
+                    "evidence": f"在 JS/TS 中检测到并发高频网络流 ({len(signals['high_freq_io'])}处)",
+                    "impact": "密集的网络流协议解析容易抢占 Node 事件循环微任务队列，导致其他异步请求延迟激增",
+                    "recommendation": "采用 Cluster 多进程模型分流，或将协议编解码卸载至 Rust NAPI 扩展"
+                })
+
+        # 3. 频繁跨语言边界调用与 FFI 封送开销
+        if len(signals["lowlevel_system_apis"]) > 3:
+            if d_lang == "Python":
+                issues.append({
+                    "severity": "MEDIUM",
+                    "category": "FFI_MARSHALLING_OVERHEAD",
+                    "evidence": f"大量分散的 ctypes/win32/系统级调用 ({len(signals['lowlevel_system_apis'])}处)",
+                    "impact": "通过 ctypes 反复进行数据封送 (marshalling) 与内存指针转换易引发潜在访问违规 (Memory Access Violation) 且性能损耗高",
+                    "recommendation": "将硬件访问与底层系统安全核心收拢为独立 Rust/C++ 微内核库，向上统一暴露精简 C ABI 或 PyO3 绑定"
+                })
+            elif d_lang == "Go":
+                issues.append({
+                    "severity": "MEDIUM",
+                    "category": "CGO_CALL_OVERHEAD",
+                    "evidence": f"Go 代码中检测到底层系统/C 交互 ({len(signals['lowlevel_system_apis'])}处)",
+                    "impact": "CGo 调用存在跨栈切换 (Goroutine 栈与 OS 线程栈)、GC 同步开销 (~100ns/call)，高频调用会严重破坏调度效率",
+                    "recommendation": "尽量使用纯 Go 重写系统接口，或通过批量汇聚调用减少 cgo 穿越频次"
+                })
+
+        # 4. 解释型语言纯 CPU 密集运算瓶颈 (Compute / Crypto Loop)
+        if d_lang in ("Python", "Typescript", "Javascript") and len(signals["heavy_compute_crypto"]) > 2:
             issues.append({
                 "severity": "HIGH",
-                "category": "SUBPROCESS_LATENCY_BOTTLENECK",
-                "evidence": f"代码中发现 {len(signals['subprocess_calls'])} 处子进程外部调用 (如 {signals['subprocess_calls'][0]})",
-                "impact": "Python 频繁通过 subprocess 启停外部二进制存在 50ms~200ms 的固定开销与进程创建风暴",
-                "recommendation": "将该外部交互下沉为原生网络直连 (如使用 Go 原生 TCP 协议栈代替外部 adb/curl 调用) 或 C/C++ 动态链接库直接嵌入"
-            })
-
-        # 2. 纯 Python 承载高并发网络/WebSocket 与 GIL 锁死
-        if dominant_lang == "Python" and len(signals["high_freq_io"]) > 0 and len(signals["concurrency_models"]) > 0:
-            issues.append({
-                "severity": "HIGH",
-                "category": "GIL_CONCURRENCY_LIMITATION",
-                "evidence": f"在 Python 代码中检测到高频流式通信/WebSocket ({len(signals['high_freq_io'])}处) 并发调度",
-                "impact": "由于 Python GIL (全局解释器锁) 存在，大量密集序列化与网络多路复用会导致单核打满、P99 抖动剧烈",
-                "recommendation": "将中枢网络网关/反向代理/WebSocket 复用层剥离为 Go 独立中枢 (单静态二进制，毫秒级协程分发)"
-            })
-
-        # 3. 频繁跨进程内存拷贝或原生 CFFI 粘合开销
-        if dominant_lang == "Python" and len(signals["lowlevel_system_apis"]) > 3:
-            issues.append({
-                "severity": "MEDIUM",
-                "category": "FFI_MARSHALLING_OVERHEAD",
-                "evidence": f"大量分散的 ctypes/win32/系统级调用 ({len(signals['lowlevel_system_apis'])}处)",
-                "impact": "通过 ctypes 反复进行数据封送 (marshalling) 与内存指针转换易引发潜在访问违规 (Memory Access Violation) 且性能损耗高",
-                "recommendation": "将硬件访问与底层系统安全核心收拢为独立 Rust/C++ 微内核库，向上统一暴露精简 C ABI 或 PyO3 绑定"
+                "category": "INTERPRETER_CPU_COMPUTE_BOTTLENECK",
+                "evidence": f"在解释型语言中检测到密集数学运算/加密/哈希算法 ({len(signals['heavy_compute_crypto'])}处)",
+                "impact": "解释器字节码逐条解释与动态类型装箱导致吞吐量比编译型语言低 10x~50x",
+                "recommendation": "将核心计算循环下沉至 Rust/C++ 原生库，利用 SIMD 向量化指令提升吞吐"
             })
 
         return issues
+
