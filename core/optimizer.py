@@ -2,17 +2,16 @@
 # -*- coding: utf-8 -*-
 """
 optimizer.py: 帕累托前沿多目标架构求解器与多语言黄金搭档合成引擎
-================================================================
-依据需求张量与精选黄金编译器语言特征，通过四层分工架构解耦：
+=============================================================================
+支持输入自然语言需求，或直接输入任何本地目录、GitHub URL 或仓库短名。
+结合代码物理静态剖析（CodebaseProfiler）生成实证驱动的四层多语言架构解耦方案：
 - Tier 1: 底层计算与存储内核 (Core Engine & Storage Kernel)
 - Tier 2: 网络调度与服务中枢 (Network Middleware & Gateway)
 - Tier 3: 业务编排与胶水算子 (Workflow & Agent Glue)
 - Tier 4: 终端门面与交互视窗 (Frontend & Facade UI)
-
-彻底终结“单一语言包打天下”的硬凑弊病，输出符合全域规范的全局帕累托最优解。
 """
 
-from typing import Dict, Any, List
+from typing import Dict, Any, List, Optional
 from .taxonomy import GOLDEN_COMPILER_STACKS, DISCARDED_STACKS
 from .intent_parser import FuzzyIntentParser
 
@@ -23,19 +22,43 @@ class PolyglotArchitectureOptimizer:
     @classmethod
     def optimize(cls, prompt: str) -> Dict[str, Any]:
         """
-        主入口：输入模糊想法，输出全局最优多语言搭配方案
+        基于自然语言模糊想法求解
         """
         parsed = FuzzyIntentParser.parse_intent(prompt)
         tensor = parsed["demand_tensor"]
         domain = parsed["primary_domain"]
+        return cls._solve_layers(tensor, domain, prompt)
 
-        # =====================================================================
-        # 1. 四层分工角色多目标推演 (Four-Tier Architectural Deduction)
-        # =====================================================================
+    @classmethod
+    def optimize_repo(cls, target_repo: str) -> Dict[str, Any]:
+        """
+        工业母机主入口：针对任意本地仓库路径、远程 Git URL 或短名进行物理级分析与多语言选型推演
+        """
+        from .repo_resolver import RepoResolver
+        from .codebase_profiler import CodebaseProfiler
 
-        # --- Tier 1: 计算与存储内核 (Core Engine & Storage Kernel) ---
+        resolved_path, meta = RepoResolver.resolve(target_repo)
+        profile = CodebaseProfiler.profile_repository(resolved_path)
+        tensor = profile["empirical_demand_tensor"]
+        repo_name = profile["repo_name"]
+
+        prompt_context = f"项目 {repo_name} 主导语言 {profile['dominant_language']}，包含代码量 {profile['total_loc']} 行"
+        opt = cls._solve_layers(tensor, "EMPIRICAL_CODEBASE", prompt_context)
+
+        # 挂载真实物理档案
+        opt["target_input"] = target_repo
+        opt["resolved_path"] = resolved_path
+        opt["repo_metadata"] = meta
+        opt["codebase_profile"] = profile
+        opt["diagnosed_bottlenecks"] = profile["diagnosed_bottlenecks"]
+
+        return opt
+
+    @classmethod
+    def _solve_layers(cls, tensor: Dict[str, int], domain: str, context_str: str) -> Dict[str, Any]:
+        # --- Tier 1: 计算与存储内核 ---
         if tensor["latency_sensitivity"] >= 4 or tensor["lowlevel_system_demand"] >= 4:
-            if domain == "HARDWARE_EMBEDDED" and any(k in prompt.lower() for k in ["cuda", "gpu", "驱动", "c++"]):
+            if domain == "HARDWARE_EMBEDDED" and any(k in context_str.lower() for k in ["cuda", "gpu", "驱动", "c++"]):
                 t1_lang = "CPP"
                 t1_role = "极低延迟裸机驱动与硬件计算内核"
                 t1_rationale = "直接接管寄存器、SIMD 或 CUDA 算子加速，满足极限吞吐与底层硬件互通需求。"
@@ -56,7 +79,7 @@ class PolyglotArchitectureOptimizer:
             t1_role = "敏捷业务算法核心"
             t1_rationale = "业务复杂度可控，优先保障开发效率与算法生态连接。"
 
-        # --- Tier 2: 网络调度与服务中枢 (Network Middleware & Gateway) ---
+        # --- Tier 2: 网络调度与服务中枢 ---
         if tensor["concurrency_demand"] >= 4 or domain in ("NETWORK_GATEWAY_MESH", "WEB_CRAWLER_MONITOR"):
             t2_lang = "GO"
             t2_role = "高并发异步网络转发与反代中枢"
@@ -70,7 +93,7 @@ class PolyglotArchitectureOptimizer:
             t2_role = "轻量稳定服务通信中枢"
             t2_rationale = "跨平台极速分发，开箱即用，免去 Python 环境依赖困扰。"
 
-        # --- Tier 3: 业务编排与胶水算子 (Workflow & Agent Glue) ---
+        # --- Tier 3: 业务编排与胶水算子 ---
         if tensor["ai_data_affinity"] >= 3 or domain in ("AI_AGENT_WORKFLOW", "QUANT_HIGH_FREQUENCY"):
             t3_lang = "PYTHON"
             t3_role = "大模型智能体编排、策略决策与数据流处理胶水"
@@ -84,13 +107,13 @@ class PolyglotArchitectureOptimizer:
             t3_role = "通用自动化脚本与任务管线"
             t3_rationale = "开发生产力极高，方便敏捷热调试与规则增删。"
 
-        # --- Tier 4: 终端门面与交互视窗 (Frontend & Facade UI) ---
+        # --- Tier 4: 终端门面与交互视窗 ---
         if tensor["gui_web_demand"] >= 4:
             t4_lang = "TYPESCRIPT"
             t4_role = "响应式 Web 前端 / 可视化监控大盘 (Next.js / React / Tailwind)"
             t4_rationale = "现代前端生态霸主，组件库丰富，用户视觉体验与响应动效顶尖。"
         else:
-            t4_lang = "PYTHON"  # 遵循 UCFS v1.0 标准库 CLI 或 Go 单二进制
+            t4_lang = "PYTHON"
             if tensor["deploy_simplicity_demand"] >= 5 and t2_lang == "GO":
                 t4_lang = "GO"
                 t4_role = "纯单二进制交互式终端门面 (Bubbletea / TUI)"
@@ -100,9 +123,6 @@ class PolyglotArchitectureOptimizer:
                 t4_role = "UCFS v1.0 现代终端门面 (三合一 run.bat/run.ps1/main.py)"
                 t4_rationale = "纯标准库编写，跨平台路径自愈，宝塔式数字菜单直选，零外部三方依赖。"
 
-        # =====================================================================
-        # 2. 架构配方组装与指标测算 (Recipe Assembly & Resource Estimation)
-        # =====================================================================
         layers = [
             {"tier": "Tier 1: 计算与存储内核", "lang_key": t1_lang, "role": t1_role, "rationale": t1_rationale},
             {"tier": "Tier 2: 网络调度与服务中枢", "lang_key": t2_lang, "role": t2_role, "rationale": t2_rationale},
@@ -110,7 +130,6 @@ class PolyglotArchitectureOptimizer:
             {"tier": "Tier 4: 终端门面与交互视窗", "lang_key": t4_lang, "role": t4_role, "rationale": t4_rationale}
         ]
 
-        # 补全语言详情
         for l in layers:
             info = GOLDEN_COMPILER_STACKS.get(l["lang_key"], {})
             l["language_name"] = info.get("name", l["lang_key"])
@@ -118,17 +137,14 @@ class PolyglotArchitectureOptimizer:
             l["necessity_score"] = info.get("necessity_score", 9.0)
             l["ai_pass_rate"] = info.get("ai_synthesis_pass_rate", 0.90)
 
-        # 估算总编译与运行时内存
         unique_langs = set(l["lang_key"] for l in layers)
         max_compile_ram = max(GOLDEN_COMPILER_STACKS[k]["compile_ram_mb"] for k in unique_langs)
         total_runtime_ram = sum(GOLDEN_COMPILER_STACKS[k]["runtime_ram_mb"] for k in unique_langs)
 
-        # 综合帕累托全局最优得分 (满分 100)
         avg_roi = sum(GOLDEN_COMPILER_STACKS[k]["roi_score"] for k in unique_langs) / len(unique_langs)
         avg_pass = sum(GOLDEN_COMPILER_STACKS[k]["ai_synthesis_pass_rate"] for k in unique_langs) / len(unique_langs)
         optimality_score = round((avg_roi * 6.5) + (avg_pass * 35), 1)
 
-        # 生成被淘汰语言对比提示
         discarded_notes = []
         if "JAVA" in DISCARDED_STACKS and t2_lang == "GO":
             discarded_notes.append("弃用 Java：采用 Go 替代传统 Spring Cloud 微服务，节省 80% 内存堆开销，启动速度提升 100 倍。")
@@ -138,8 +154,9 @@ class PolyglotArchitectureOptimizer:
             discarded_notes.append("精简 C++：除特定不可替代的 GPU 算子外，绝大部分系统逻辑交由 Rust 处理以保障内存安全。")
 
         return {
-            "prompt": prompt,
+            "prompt": context_str,
             "domain": domain,
+            "demand_tensor": tensor,
             "optimality_score": optimality_score,
             "architecture_blueprint": {
                 "layers": layers,
