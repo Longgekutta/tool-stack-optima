@@ -191,6 +191,47 @@ def execute_accelerated_task(payload: bytes) -> bytes:
     
     # 降级逻辑 (Fallback)
     return payload
+
+# =====================================================================
+# GitHub-Scientist 模式双轨影子实验器 (零越权、零中断保底)
+# =====================================================================
+import time
+import functools
+
+class ShadowExperiment:
+    \"\"\"双轨影子运行器：永远返回 primary 结果，影子执行 candidate 并统计指标\"\"\"
+    def __init__(self, name="shadow_exp"):
+        self.name = name
+        self.total = 0
+        self.matches = 0
+        self.mismatches = 0
+        self.errors = 0
+
+    def execute(self, primary_fn, candidate_fn, *args, **kwargs):
+        self.total += 1
+        # 1. 权威生产路径 (确保生产 0 中断)
+        res_primary = primary_fn(*args, **kwargs)
+        # 2. 影子加速路径
+        if candidate_fn:
+            try:
+                res_candidate = candidate_fn(*args, **kwargs)
+                if res_candidate == res_primary:
+                    self.matches += 1
+                else:
+                    self.mismatches += 1
+            except Exception:
+                self.errors += 1
+        return res_primary
+
+def shadow_experiment(name, candidate_fn=None):
+    exp = ShadowExperiment(name=name)
+    def decorator(fn):
+        @functools.wraps(fn)
+        def wrapper(*args, **kwargs):
+            return exp.execute(fn, candidate_fn, *args, **kwargs)
+        wrapper.experiment = exp
+        return wrapper
+    return decorator
 """
         bridge_glue.write_text(glue_content, encoding="utf-8")
         generated_files.append(str(bridge_glue))
@@ -259,6 +300,12 @@ python -c "import bridge_glue; print('加速内核就绪状态:', bridge_glue.is
         readme.write_text(readme_content, encoding="utf-8")
         generated_files.append(str(readme))
 
+        # 5. 生成标准 Git Patch 与回滚作业手册 (integration.patch & ROLLBACK_RUNBOOK.md)
+        from .patch_packager import PatchPackager
+        patch_info = PatchPackager.generate_patch(resolved_path, out_root, [])
+        generated_files.append(patch_info["patch_path"])
+        generated_files.append(patch_info["runbook_path"])
+
         return {
             "status": "success",
             "repo_name": repo_name,
@@ -267,6 +314,7 @@ python -c "import bridge_glue; print('加速内核就绪状态:', bridge_glue.is
             "files": generated_files,
             "targeted_bottlenecks": bottleneck_cats,
             "blast_radius_evaluation": blast_info,
+            "patch_info": patch_info,
             "is_shadow_sandbox": True
         }
 

@@ -37,7 +37,7 @@ def call_native():
             res = ScaffoldGenerator.generate_scaffold(src_repo, output_dir=out_dir)
 
             self.assertEqual(res["status"], "success")
-            self.assertEqual(res["generated_files_count"], 5)
+            self.assertEqual(res["generated_files_count"], 7)
             self.assertIn("FFI_MARSHALLING_OVERHEAD", res["targeted_bottlenecks"])
 
             # Verify files exist on disk
@@ -46,12 +46,16 @@ def call_native():
             bridge_glue = Path(out_dir) / "bridge_glue.py"
             build_ps1 = Path(out_dir) / "build_native.ps1"
             readme = Path(out_dir) / "README_SCAFFOLD.md"
+            patch_file = Path(out_dir) / "integration.patch"
+            runbook_file = Path(out_dir) / "ROLLBACK_RUNBOOK.md"
 
             self.assertTrue(cargo_toml.exists())
             self.assertTrue(lib_rs.exists())
             self.assertTrue(bridge_glue.exists())
             self.assertTrue(build_ps1.exists())
             self.assertTrue(readme.exists())
+            self.assertTrue(patch_file.exists())
+            self.assertTrue(runbook_file.exists())
 
             # Verify content of Cargo.toml and bridge_glue
             self.assertIn("crate-type = [\"cdylib\", \"rlib\"]", cargo_toml.read_text(encoding="utf-8"))
