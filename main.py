@@ -270,6 +270,49 @@ def cmd_probe(args) -> int:
     return 0 if res["status"] == "success" else 1
 
 
+def cmd_profile(args) -> int:
+    """行级动词: profile (深入函数体与行号的热点调用与性能剖析)"""
+    from core.code_profiler_flame import HotspotProfiler
+    target = getattr(args, "target", ".")
+    if isinstance(target, list):
+        target = " ".join(target).strip()
+    if not target:
+        target = "."
+
+    custom_cmd = getattr(args, "cmd", None)
+    top_n = getattr(args, "top", 10)
+    res = HotspotProfiler.profile_target(target, custom_cmd=custom_cmd, top_n=top_n)
+
+    if getattr(args, "json", False):
+        print(json.dumps(res, ensure_ascii=False, indent=2))
+        return 0 if res.get("success") else 1
+
+    doc = HotspotProfiler.render_markdown(res)
+    print("\n" + doc)
+    return 0 if res.get("success") else 1
+
+
+def cmd_diff_test(args) -> int:
+    """等价性动词: diff-test / differential (双轨差分模糊测试与语义等价性断言)"""
+    from core.differential_tester import DifferentialTester
+    scaffold_dir = getattr(args, "scaffold_dir", None)
+    if isinstance(scaffold_dir, list):
+        scaffold_dir = " ".join(scaffold_dir).strip()
+    if not scaffold_dir:
+        scaffold_dir = "scaffold_refactor"
+
+    iterations = getattr(args, "iterations", 500)
+    res = DifferentialTester.run_differential_test(scaffold_dir, iterations=iterations)
+
+    if getattr(args, "json", False):
+        print(json.dumps(res, ensure_ascii=False, indent=2))
+        return 0 if res.get("success") else 1
+
+    doc = DifferentialTester.render_markdown(res)
+    print("\n" + doc)
+    return 0 if res.get("success") else 1
+
+
 def cmd_run(args) -> int:
     """标准动词: run (支持输入模糊意图文本，或直接输入仓库路径/URL进行物理分析)"""
     prompt = args.prompt
@@ -425,6 +468,17 @@ def main():
     p_probe.add_argument("--cmd", type=str, default=None, help="自定义执行探针命令")
     p_probe.add_argument("--json", action="store_true", help="以 JSON 格式输出")
 
+    p_profile = subparsers.add_parser("profile", help="深入函数体与代码行号的高精热点调用剖析")
+    p_profile.add_argument("target", nargs="*", default=".", help="目标仓库路径、Git URL 或短名")
+    p_profile.add_argument("--cmd", type=str, default=None, help="自定义被剖析命令")
+    p_profile.add_argument("--top", type=int, default=10, help="展示 Top N 热点函数")
+    p_profile.add_argument("--json", action="store_true", help="以 JSON 格式输出")
+
+    p_diff = subparsers.add_parser("diff-test", help="双轨差分模糊测试与影子微内核语义等价性自验")
+    p_diff.add_argument("scaffold_dir", nargs="*", default="scaffold_refactor", help="脚手架目录路径")
+    p_diff.add_argument("--iterations", type=int, default=500, help="模糊测试随机轮次")
+    p_diff.add_argument("--json", action="store_true", help="以 JSON 格式输出")
+
     p_test = subparsers.add_parser("test", help="执行自动化回归单元测试")
     p_test.add_argument("--json", action="store_true")
 
@@ -451,6 +505,9 @@ def main():
         "scaffold": cmd_scaffold,
         "surgery": cmd_scaffold,
         "probe": cmd_probe,
+        "profile": cmd_profile,
+        "diff-test": cmd_diff_test,
+        "differential": cmd_diff_test,
         "run": cmd_run,
         "synthesize": cmd_run,
         "tournament": cmd_tournament,
